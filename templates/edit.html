@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}
+edit {{post}}
+{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 30px;">
+    {% if success %}
+    <h2 class="mb-4">Post was edited!</h2>
+    <p>To come back click <a href="/">here</a></p>
+    {% else %}
+    <h2 class="mb-4">Edit the post!</h2>
+    <div class="row">
+        <div class="col-5">
+            <form method="post">
+                {% csrf_token %}
+                {{form.as_p}}
+                <button type="submit" class="btn btn-primary">Edit!</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
