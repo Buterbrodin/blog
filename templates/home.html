@@ -1,23 +1,19 @@
 {% extends 'base.html' %}
 
+
 {% block title %}
 Home
 {% endblock %}
 
 {% block content %}
-<div class="container my-5">
+{% if messages %}
+{% for message in messages %}
+{% include 'messages.html' with message=message %}
+{% endfor%}
+{% endif %}
+<div class="container my-5 w-60">
     {% for post in posts %}
-    <div class="d-flex justify-content-start mb-4">
-        <div class="p-3" style="width:700px">
-            <h2>{{ post.title }}</h2>
-            <p class="text-muted mt-2">Created: {{ post.created_at }}</p>
-            <hr class="border border-primary border-1 opacity-100">
-            <p class="mt-2">{{post.content|truncatewords:80}}</p>
-            <a href="/post/?slug={{post.slug}}" class="btn btn-primary me-2 px-4">Read</a>
-            <a href="{% url 'edit' post.slug %}" class="btn btn-primary px-4 me-2">Edit</a>
-            <a href="{% url 'delete' post.slug %}" class="btn px-4 btn-danger">Delete</a>
-        </div>
-    </div>
+    {% include 'post_card.html' with post=post %}
     {% endfor %}
 </div>
 {% endblock %}

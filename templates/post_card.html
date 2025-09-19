@@ -1,0 +1,19 @@
+<div class="d-flex justify-content-start mb-4">
+    <div class="p-3 w-75">
+        <h2>{{ post.title }}</h2>
+        <p class="text-muted mt-2">Created: {{ post.created_at }}</p>
+        <hr class="border border-primary border-1 opacity-100">
+        <p class="mt-2">{{post.content|truncatewords:80}}</p>
+        <div class="row g-2">
+            <div class="col-12 col-md-1">
+                <a href="/post/?slug={{post.slug}}" class="btn btn-primary w-100">Read</a>
+            </div>
+            <div class="col-12 col-md-1">
+                <a href="{% url 'edit' post.slug %}" class="btn btn-primary w-100">Edit</a>
+            </div>
+            <div class="col-12 col-md-1">
+                <a href="{% url 'delete' post.slug %}" class="btn btn-danger w-100">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
