@@ -5,21 +5,26 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from .models import Post
 from .forms import PostForm
+from django.core.paginator import Paginator
 
 
 def home(request):
     posts = Post.objects.all()
+    if request.GET.get('title'):
+        posts = posts.filter(title__icontains=request.GET['title'])
+    paginator = Paginator(posts, 5)
+    page_number = request.GET.get('page')
+    posts = paginator.get_page(page_number)    
     status = {'info': 'primary', 'success': 'success', 'error': 'danger'}
     icons = {'info': 'bi-info-circle',
              'success': 'bi-check-circle',
              'error': 'bi-exclamation-triangle'}
-    return render(request, 'home.html', {'posts': posts, 'status': status, 'icons': icons})
+    return render(request, 'post/home.html', {'posts': posts, 'status': status, 'icons': icons})
 
 
-def about(request):
-    slug = request.GET.get('slug')
-    posts = Post.objects.filter(slug=slug)
-    return render(request, 'about.html', {'posts': posts})
+def about(request, slug):
+    post = get_object_or_404(Post, slug=slug)
+    return render(request, 'post/about.html', {'post': post})
 
 
 def edit(request, slug):
@@ -32,7 +37,7 @@ def edit(request, slug):
             form.save()
             messages.add_message(request, messages.SUCCESS, 'The post was successfully edited!')
             return redirect('/')
-    return render(request, 'edit.html', {'post': post, 'form': form})
+    return render(request, 'post/edit.html', {'post': post, 'form': form})
 
 
 def create(request):
@@ -44,7 +49,7 @@ def create(request):
             form.save()
             messages.add_message(request, messages.SUCCESS, 'The post was successfully created!')
             return redirect('/')
-    return render(request, 'create.html', {'form': form})
+    return render(request, 'post/create.html', {'form': form})
 
 
 def delete(request, slug):
