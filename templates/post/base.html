@@ -30,11 +30,46 @@
                         <a class="nav-link active" aria-current="page" href="/post/create">Create a post</a>
                     </li>
                 </ul>
-                <form class="d-flex" method="get" action="/">
+                <form class="d-flex me-3" method="get" action="/">
                     <input name="title" class="form-control me-2" type="search" placeholder="Type in the title"
                         aria-label="Search" />
                     <button class="btn btn-outline-success" type="submit">Search</button>
                 </form>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+
+                            <li><a class="dropdown-item" href="{% url 'password_change' %}">
+                                <i class="bi bi-key me-2"></i>Change Password
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">
+                            <i class="bi bi-person-plus me-1"></i>Register
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </nav>

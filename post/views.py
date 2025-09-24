@@ -4,8 +4,11 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from .models import Post
-from .forms import PostForm
+from .forms import PostForm, CustomLoginForm, CustomRegisterForm
+from django.contrib.auth.views import LoginView, PasswordResetView
 from django.core.paginator import Paginator
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
 
 
 def home(request):
@@ -14,7 +17,7 @@ def home(request):
         posts = posts.filter(title__icontains=request.GET['title'])
     paginator = Paginator(posts, 5)
     page_number = request.GET.get('page')
-    posts = paginator.get_page(page_number)    
+    posts = paginator.get_page(page_number)
     status = {'info': 'primary', 'success': 'success', 'error': 'danger'}
     icons = {'info': 'bi-info-circle',
              'success': 'bi-check-circle',
@@ -57,3 +60,14 @@ def delete(request, slug):
     post.delete()
     messages.add_message(request, messages.SUCCESS, 'The post was successfully deleted!')
     return redirect('/')
+
+
+class CustomLoginView(LoginView):
+    authentication_form = CustomLoginForm
+    template_name = 'post/login.html'
+
+
+class CustomRegisterView(CreateView):
+    form_class = CustomRegisterForm
+    template_name = "registration/register.html"
+    success_url = reverse_lazy("home")
