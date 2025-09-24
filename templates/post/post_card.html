@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-start mb-4">
     <div class="modal fade" id="exampleModal-{{post.pk}}" tabindex="-1" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
+         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -12,13 +12,23 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <a href="{% url 'delete' post.slug %}" class="btn btn-primary">Yes</a>
+                    <form action="{% url 'delete' post.slug %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">Yes</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
     <div class="p-3 w-100">
         <h2>{{ post.title }}</h2>
+        {% if post.tags.all %}
+        <h5>Tags:
+            {% for tag in post.tags.all %}
+            <a href="/?tag={{tag}}"><span class="badge text-bg-success">{{tag}}</span></a>
+            {% endfor %}
+        </h5>
+        {% endif %}
         <p class="text-muted mt-2">Created: {{ post.created_at }}</p>
         <hr class="border border-primary border-1 opacity-100">
         <p class="mt-2">{{post.content|truncatewords:80}}</p>
@@ -31,7 +41,8 @@
             </div>
             <div class="col-12 col-lg-1">
                 <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#exampleModal-{{post.pk}}"
-                    style="min-width: 68px;">Delete</button>
+                        style="min-width: 68px;">Delete
+                </button>
             </div>
         </div>
     </div>
