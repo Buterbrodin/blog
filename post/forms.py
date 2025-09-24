@@ -5,16 +5,24 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, Pass
 from post.models import Post
 from django.core.validators import MinLengthValidator, RegexValidator, EmailValidator
 from django.contrib.auth.models import User
+from taggit.forms import TagField, TagWidget
 
 
 class PostForm(forms.ModelForm):
     title = forms.CharField(required=True, min_length=3, widget=forms.TextInput(attrs={'class': 'form-control mt-1'}))
     content = forms.CharField(required=True, widget=forms.Textarea(attrs={'class': 'form-control mt-1', 'rows': 9}),
                               min_length=10)
+    tags = TagField(
+        required=False,
+        label="Tags",
+        widget=TagWidget(attrs={
+            'class': 'form-control mt-1',
+            'placeholder': 'Enter tags separated by commas',
+        }))
 
     class Meta:
         model = Post
-        fields = ['title', 'content']
+        fields = ['title', 'content', 'tags']
 
 
 class CustomLoginForm(AuthenticationForm):

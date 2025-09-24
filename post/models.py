@@ -1,5 +1,9 @@
 from django.db import models
 from django.utils.text import slugify
+from taggit.managers import TaggableManager
+from django.contrib.auth.models import User
+from taggit.models import Tag
+
 
 class Post(models.Model):
     title = models.CharField(max_length=100, verbose_name='Заголовок', help_text='Введите заголовок поста.')
@@ -7,6 +11,8 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     slug = models.SlugField(unique=True, blank=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='posts')
+    tags = TaggableManager()
 
     class Meta:
         verbose_name = 'Пост'
@@ -23,5 +29,3 @@ class Post(models.Model):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
-
-
