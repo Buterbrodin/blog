@@ -4,11 +4,13 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from .models import Post
-from .forms import PostForm, CustomLoginForm, CustomRegisterForm
-from django.contrib.auth.views import LoginView, PasswordResetView
+from .forms import PostForm, CustomLoginForm, CustomRegisterForm, CustomPasswordChangeForm
+from django.contrib.auth.views import LoginView, PasswordResetView, LogoutView, PasswordChangeView
 from django.core.paginator import Paginator
 from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
+from django.contrib import messages
+from django.contrib.messages import get_messages
 
 
 def home(request):
@@ -22,6 +24,9 @@ def home(request):
     icons = {'info': 'bi-info-circle',
              'success': 'bi-check-circle',
              'error': 'bi-exclamation-triangle'}
+    storage = get_messages(request)
+    for msg in storage:
+        print(msg.tags, msg)
     return render(request, 'post/home.html', {'posts': posts, 'status': status, 'icons': icons})
 
 
@@ -64,10 +69,31 @@ def delete(request, slug):
 
 class CustomLoginView(LoginView):
     authentication_form = CustomLoginForm
-    template_name = 'post/login.html'
+    template_name = 'registration/login.html'
 
+    def form_valid(self, form):
+        messages.success(self.request, 'You are now logged in!')
+        return super().form_valid(form)
 
 class CustomRegisterView(CreateView):
     form_class = CustomRegisterForm
     template_name = "registration/register.html"
-    success_url = reverse_lazy("home")
+
+    def form_valid(self, form):
+        messages.success(self.request, 'You have successfully registered a new account!')
+        return super().form_valid(form)
+
+class CustomLogoutView(LogoutView):
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(request, "You have been logged out!")
+        return super().dispatch(request, *args, **kwargs)
+
+class CustomPasswordChangeView(PasswordChangeView):
+    form_class = CustomPasswordChangeForm
+    template_name = 'registration/password_change.html'
+    success_url = reverse_lazy('home')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'You have successfully changed the password!')
+        return super().form_valid(form)
+
