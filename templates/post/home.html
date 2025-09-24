@@ -6,12 +6,14 @@ Home
 {% endblock %}
 
 {% block content %}
+<div class="container my-5">
+</div>
 {% if messages %}
 {% for message in messages %}
 {% include 'post/messages.html' with message=message %}
 {% endfor%}
 {% endif %}
-<div class="container my-5 w-60">
+<div class="container my-2 w-60">
     {% for post in posts %}
     {% include 'post/post_card.html' with post=post %}
     {% empty %}
@@ -19,7 +21,6 @@ Home
     <p>To create a new post click <a href="/post/create">here</a></p>
     {% endfor %}
     {% if posts.paginator.num_pages > 1 %}
-
     {% include 'post/pagination.html' with page=posts%}
     {% endif %}
 </div>
