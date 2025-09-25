@@ -2,15 +2,22 @@ from tabnanny import verbose
 
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
-from post.models import Post
+from post.models import Post, Comment
 from django.core.validators import MinLengthValidator, RegexValidator, EmailValidator
 from django.contrib.auth.models import User
 from taggit.forms import TagField, TagWidget
 
 
 class PostForm(forms.ModelForm):
-    title = forms.CharField(required=True, min_length=3, widget=forms.TextInput(attrs={'class': 'form-control mt-1'}))
-    content = forms.CharField(required=True, widget=forms.Textarea(attrs={'class': 'form-control mt-1', 'rows': 9}),
+    title = forms.CharField(required=True,
+                            min_length=3,
+                            widget=forms.TextInput(
+                                attrs={'class': 'form-control mt-1'}
+                            ))
+    content = forms.CharField(required=True,
+                              widget=forms.Textarea(
+                                  attrs={'class': 'form-control mt-1', 'rows': 9}
+                              ),
                               min_length=10)
     tags = TagField(
         required=False,
@@ -25,13 +32,33 @@ class PostForm(forms.ModelForm):
         fields = ['title', 'content', 'tags']
 
 
+class CommentForm(forms.ModelForm):
+    content = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control mt-1', 'rows': 3}),
+        validators=[
+            MinLengthValidator(10, 'Comment must be at least 10 characters')
+        ])
+
+    class Meta:
+        model = Comment
+        fields = ['content']
+
+
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'form-control mt-1', 'placeholder': 'Username'}),
-        validators=[MinLengthValidator(4, 'Username must be at least 4 characters')])
+        widget=forms.TextInput(
+            attrs={'class': 'form-control mt-1', 'placeholder': 'Username'}
+        ),
+        validators=[
+            MinLengthValidator(4, 'Username must be at least 4 characters')
+        ])
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control mt-1', 'placeholder': 'Password'}),
-        validators=[MinLengthValidator(8, 'Password must be at least 8 characters')])
+        widget=forms.PasswordInput(
+            attrs={'class': 'form-control mt-1', 'placeholder': 'Password'}
+        ),
+        validators=[
+            MinLengthValidator(8, 'Password must be at least 8 characters')
+        ])
 
     class Meta:
         model = User

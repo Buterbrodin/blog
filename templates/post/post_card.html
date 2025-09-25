@@ -34,7 +34,7 @@
         <p class="mt-2">{{post.content|truncatewords:80}}</p>
         <div class="row g-2">
             <div class="col-12 col-lg-1">
-                <a href="{% url 'about' post.slug %}" class="btn btn-primary w-100" style="min-width: 68px;">Read</a>
+                <a href="{{post.get_absolute_url}}" class="btn btn-primary w-100" style="min-width: 68px;">Read</a>
             </div>
             <div class="col-12 col-lg-1">
                 <a href="{% url 'edit' post.slug %}" class="btn btn-primary w-100" style="min-width: 68px;">Edit</a>
