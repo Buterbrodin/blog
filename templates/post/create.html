@@ -11,8 +11,16 @@ Create a new post
         <div class="col-sm-8 col-md-5">
             <form method="post">
                 {% csrf_token %}
-                {{form.as_p}}
-                <button type="submit" class="btn btn-primary">Create!</button>
+                {% for field in form %}
+                {{field.label_tag}}
+                {{field}}
+                {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ field.errors|striptags }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <button type="submit" class="btn btn-primary mt-2">Create!</button>
             </form>
         </div>
     </div>

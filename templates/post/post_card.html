@@ -29,21 +29,32 @@
             {% endfor %}
         </h5>
         {% endif %}
-        <p class="text-muted mt-2">Created: {{ post.created_at }}</p>
+        {% if post.updated_at|date:"d M Y H:i" == post.created_at|date:"d M Y H:i" %}
+        <p class="text-muted">Created: {{ post.created_at|date:"d M Y H:i" }}</p>
+        {% else %}
+        <p class="text-muted">Updated: {{ post.updated_at|date:"d M Y H:i" }}</p>
+        {% endif %}
         <hr class="border border-primary border-1 opacity-100">
         <p class="mt-2">{{post.content|truncatewords:80}}</p>
         <div class="row g-2">
             <div class="col-12 col-lg-1">
-                <a href="{{post.get_absolute_url}}" class="btn btn-primary w-100" style="min-width: 68px;">Read</a>
+                <a href="{{post.get_absolute_url}}"
+                   class="btn btn-primary w-100 {% if not user.is_authenticated %}disabled{% endif %}"
+                   style="min-width: 68px;">Read</a>
+            </div>
+            {% if post.author == request.user or request.user.is_superuser %}
+            <div class="col-12 col-lg-1">
+                <a href="{% url 'edit' post.slug %}"
+                   class="btn btn-primary w-100 {% if not user.is_authenticated %}disabled{% endif %}"
+                   style="min-width: 68px;">Edit</a>
             </div>
             <div class="col-12 col-lg-1">
-                <a href="{% url 'edit' post.slug %}" class="btn btn-primary w-100" style="min-width: 68px;">Edit</a>
-            </div>
-            <div class="col-12 col-lg-1">
-                <button class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#exampleModal-{{post.pk}}"
+                <button class="btn btn-danger w-100 {% if not user.is_authenticated %}disabled{% endif %}"
+                        data-bs-toggle="modal" data-bs-target="#exampleModal-{{post.pk}}"
                         style="min-width: 68px;">Delete
                 </button>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -10,22 +10,30 @@ from taggit.forms import TagField, TagWidget
 
 class PostForm(forms.ModelForm):
     title = forms.CharField(required=True,
-                            min_length=3,
                             widget=forms.TextInput(
-                                attrs={'class': 'form-control mt-1'}
-                            ))
+                                attrs={'class': 'form-control mt-1 mb-2'}
+                            ),
+                            validators=[MinLengthValidator(3, 'Title must be at least 3 characters')]
+                            )
     content = forms.CharField(required=True,
                               widget=forms.Textarea(
-                                  attrs={'class': 'form-control mt-1', 'rows': 9}
+                                  attrs={'class': 'form-control mt-1 mb-2', 'rows': 9}
                               ),
-                              min_length=10)
+                              validators=[MinLengthValidator(10, 'Content must be at least 10 characters')]
+                              )
     tags = TagField(
         required=False,
         label="Tags",
         widget=TagWidget(attrs={
-            'class': 'form-control mt-1',
+            'class': 'form-control mt-1 mb-2',
             'placeholder': 'Enter tags separated by commas',
-        }))
+        }),
+        validators=[MinLengthValidator(3, 'Tags must be at least 3 characters'),
+                    RegexValidator(
+                        regex=r'^[a-zA-Z]+(?:\s*,\s*[a-zA-Z]+)*$',
+                        message='Tags must contain only English words separated by commas.')
+                    ]
+    )
 
     class Meta:
         model = Post

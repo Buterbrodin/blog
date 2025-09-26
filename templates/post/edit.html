@@ -11,7 +11,15 @@ edit {{post}}
         <div class="col-5">
             <form method="post">
                 {% csrf_token %}
-                {{form.as_p}}
+                {% for field in form %}
+                {{field.label_tag}}
+                {{field}}
+                {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ field.errors|striptags }}
+                </div>
+                {% endif %}
+                {% endfor %}
                 <button type="submit" class="btn btn-primary">Edit</button>
             </form>
         </div>
