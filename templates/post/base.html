@@ -28,15 +28,13 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="/post/create">Create a post</a>
-                    {% if user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="/?user_posts=true">Check your posts</a>
                         </li>
-                    {% endif %}
                 </ul>
                 <form class="d-flex me-3" method="get" action="/">
-                    <input name="title" class="form-control me-2" type="search" placeholder="Type in the title"
-                        aria-label="Search"/>
+                    <input name="content" class="form-control me-2" type="search" placeholder="Type in the title, content or tag"
+                        aria-label="Search" style="width: 300px;"/>
                     <button class="btn btn-outline-success" type="submit">Search</button>
                 </form>
                 <ul class="navbar-nav">

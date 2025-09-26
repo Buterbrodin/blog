@@ -8,6 +8,9 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, ListView
 from django.urls import reverse
+from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import login
 
 status = {'info': 'primary', 'success': 'success', 'error': 'danger'}
 icons = {'info': 'bi-info-circle',
@@ -24,14 +27,18 @@ class HomeView(ListView):
 
     def get_queryset(self):
         qs = Post.objects.all()
-        if self.request.GET.get('user_posts') == 'true' and self.request.user.is_authenticated:
-            qs = qs.filter(user=self.request.user)
+        if self.request.GET.get('user_posts') == 'true':
+            if self.request.user.is_authenticated:
+                qs = qs.filter(author=self.request.user)
+            else:
+                qs = Post.objects.none()
         elif self.request.GET.get('tag'):
             tag = self.request.GET.get('tag')
-            qs = qs.filter(tag__name__contains=tag)
-        elif self.request.GET.get('title'):
-            title = self.request.GET.get('title')
-            qs = qs.filter(title__icontains=title)
+            qs = qs.filter(tags__name__icontains=tag)
+        elif self.request.GET.get('content'):
+            content = self.request.GET.get('content')
+            qs = qs.filter(
+                Q(content__icontains=content) | Q(title__icontains=content) | Q(tags__name__icontains=content))
         return qs
 
     def get_context_data(self, **kwargs):
@@ -57,7 +64,7 @@ class HomeView(ListView):
 #     return render(request, 'post/home.html', {'posts': posts, 'status': status, 'icons': icons})
 
 
-class PostDetailView(DetailView):
+class PostDetailView(LoginRequiredMixin, DetailView):
     '''Post detail view'''
     model = Post
     template_name = 'post/about.html'
@@ -77,7 +84,7 @@ class PostDetailView(DetailView):
 #     return render(request, 'post/about.html', {'post': post})
 
 
-class EditPostView(UpdateView):
+class PostEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     '''Edit post view'''
     model = Post
     form_class = PostForm
@@ -87,6 +94,24 @@ class EditPostView(UpdateView):
     def form_valid(self, form):
         messages.success(self.request, 'The post was successfully edited!')
         return super().form_valid(form)
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author or self.request.user.is_superuser
+
+
+class CommentEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    '''Edit comment view'''
+    model = Comment
+    form_class = CommentForm
+    template_name = 'post/comment.html'
+
+    def get_success_url(self):
+        return self.get_object().post.get_absolute_url()
+
+    def test_func(self):
+        comment = self.get_object()
+        return comment.author == self.request.user or self.request.user.is_superuser
 
 
 # def edit(request, slug):
@@ -102,7 +127,7 @@ class EditPostView(UpdateView):
 #     return render(request, 'post/edit.html', {'post': post, 'form': form})
 
 
-class PostCreateView(CreateView):
+class PostCreateView(LoginRequiredMixin, CreateView):
     '''Post create view'''
     model = Post
     form_class = PostForm
@@ -129,7 +154,7 @@ class PostCreateView(CreateView):
 #     return render(request, 'post/create.html', {'form': form})
 
 
-class PostDeleteView(DeleteView):
+class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     '''Post delete view'''
     model = Post
     success_url = reverse_lazy('home')
@@ -137,6 +162,10 @@ class PostDeleteView(DeleteView):
     def post(self, request, *args, **kwargs):
         messages.success(request, "The post was successfully deleted!")
         return super().post(request, *args, **kwargs)
+
+    def test_func(self):
+        post = self.get_object()
+        return self.request.user == post.author or self.request.user.is_superuser
 
 
 # def delete(request, slug):
@@ -147,10 +176,10 @@ class PostDeleteView(DeleteView):
 #     return redirect('/')
 
 
-class CommentCreateView(CreateView):
+class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
-    template_name = 'post/comment_add.html'
+    template_name = 'post/comment.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -162,7 +191,7 @@ class CommentCreateView(CreateView):
         return reverse('about', args=(self.kwargs['slug'],))
 
 
-class CommentDeleteView(DeleteView):
+class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Comment
 
     def post(self, request, *args, **kwargs):
@@ -171,6 +200,10 @@ class CommentDeleteView(DeleteView):
 
     def get_success_url(self):
         return reverse('about', args=(self.object.post.slug,))
+
+    def test_func(self):
+        comment = self.get_object()
+        return self.request.user == comment.author or self.request.user.is_superuser
 
 
 # def comment_add(request, slug):
@@ -184,7 +217,7 @@ class CommentDeleteView(DeleteView):
 #             comment.save()
 #             messages.success(request, 'The comment was successfully added!')
 #             return redirect('about', slug=slug)
-#     return render(request, 'post/comment_add.html', {'form': form})
+#     return render(request, 'post/comment.html', {'form': form})
 
 
 class CustomLoginView(LoginView):
@@ -206,7 +239,9 @@ class CustomRegisterView(CreateView):
 
     def form_valid(self, form):
         messages.success(self.request, 'You have successfully registered a new account!')
-        return super().form_valid(form)
+        user = form.save()
+        login(self.request, user)
+        return redirect('home')
 
 
 class CustomLogoutView(LogoutView):
