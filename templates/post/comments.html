@@ -1,17 +1,23 @@
 {% for comment in comments %}
-<div class="row">
+<div class="row mb-5">
     <div class="col-md-5">
         <div class="d-flex justify-content-between align-items-center">
             <h4>{{ comment.author.username }}</h4>
             {% if comment.author == request.user or request.user.is_superuser %}
-            <form method="post" action="{% url 'comment_delete' comment.pk %}">
-                {% csrf_token %}
-                <button type="submit"
-                        class="btn btn-sm btn-outline-danger ms-2"
-                        style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </form>
+            <div class="d-flex">
+                <form method="post" action="{% url 'comment_delete' comment.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-danger ms-2"
+                            style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+                <a class="btn btn-sm btn-outline-primary ms-2" href="{% url 'comment_edit' comment.pk %}"
+                   style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
             {% endif %}
         </div>
         {% if comment.updated_at|date:"d M Y H:i" == comment.created_at|date:"d M Y H:i" %}

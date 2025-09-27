@@ -8,7 +8,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, ListView
 from django.urls import reverse
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import login
 
@@ -38,13 +38,18 @@ class HomeView(ListView):
         elif self.request.GET.get('content'):
             content = self.request.GET.get('content')
             qs = qs.filter(
-                Q(content__icontains=content) | Q(title__icontains=content) | Q(tags__name__icontains=content))
+                Q(content__icontains=content) | Q(title__icontains=content) | Q(
+                    tags__name__icontains=content)).distinct()
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        most_viewed_posts = Post.objects.order_by('-views')[:5]
+        most_commented_posts = Post.objects.annotate(num_comments=Count('comments')).order_by('-num_comments')[:5]
         context['status'] = status
         context['icons'] = icons
+        context['most_viewed_posts'] = most_viewed_posts
+        context['most_commented_posts'] = most_commented_posts
         return context
 
 
@@ -78,6 +83,12 @@ class PostDetailView(LoginRequiredMixin, DetailView):
         context['icons'] = icons
         return context
 
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        obj.views += 1
+        obj.save()
+        return obj
+
 
 # def about(request, slug):
 #     post = get_object_or_404(Post, slug=slug)
@@ -104,10 +115,14 @@ class CommentEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     '''Edit comment view'''
     model = Comment
     form_class = CommentForm
-    template_name = 'post/comment.html'
+    template_name = 'post/comment_create.html'
 
     def get_success_url(self):
         return self.get_object().post.get_absolute_url()
+
+    def form_valid(self, form):
+        messages.success(self.request, 'The comment was successfully edited!')
+        return super().form_valid(form)
 
     def test_func(self):
         comment = self.get_object()
@@ -179,7 +194,7 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
-    template_name = 'post/comment.html'
+    template_name = 'post/comment_create.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -217,7 +232,7 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 #             comment.save()
 #             messages.success(request, 'The comment was successfully added!')
 #             return redirect('about', slug=slug)
-#     return render(request, 'post/comment.html', {'form': form})
+#     return render(request, 'post/comment_create.html', {'form': form})
 
 
 class CustomLoginView(LoginView):

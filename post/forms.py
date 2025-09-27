@@ -15,15 +15,16 @@ class PostForm(forms.ModelForm):
                             ),
                             validators=[MinLengthValidator(3, 'Title must be at least 3 characters')]
                             )
+
     content = forms.CharField(required=True,
                               widget=forms.Textarea(
                                   attrs={'class': 'form-control mt-1 mb-2', 'rows': 9}
                               ),
                               validators=[MinLengthValidator(10, 'Content must be at least 10 characters')]
                               )
+
     tags = TagField(
         required=False,
-        label="Tags",
         widget=TagWidget(attrs={
             'class': 'form-control mt-1 mb-2',
             'placeholder': 'Enter tags separated by commas',

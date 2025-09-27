@@ -21,7 +21,11 @@
         </div>
     </div>
     <div class="p-3 w-100">
-        <h2>{{ post.title }}</h2>
+        <div class="d-flex justify-content-between">
+            <h2>{{ post.title }}</h2>
+            <button type="button" class="btn btn-info"><i class="bi bi-eye-fill"></i> {{post.views}}
+            </button>
+        </div>
         {% if post.tags.all %}
         <h5>Tags:
             {% for tag in post.tags.all %}
@@ -36,19 +40,19 @@
         {% endif %}
         <hr class="border border-primary border-1 opacity-100">
         <p class="mt-2">{{post.content|truncatewords:80}}</p>
-        <div class="row g-2">
-            <div class="col-12 col-lg-1">
+        <div class="row gx-5">
+            <div class="col-12 col-md-2 col-xxl-1">
                 <a href="{{post.get_absolute_url}}"
                    class="btn btn-primary w-100 {% if not user.is_authenticated %}disabled{% endif %}"
                    style="min-width: 68px;">Read</a>
             </div>
             {% if post.author == request.user or request.user.is_superuser %}
-            <div class="col-12 col-lg-1">
+            <div class="col-12 col-md-2 col-xxl-1">
                 <a href="{% url 'edit' post.slug %}"
                    class="btn btn-primary w-100 {% if not user.is_authenticated %}disabled{% endif %}"
                    style="min-width: 68px;">Edit</a>
             </div>
-            <div class="col-12 col-lg-1">
+            <div class="col-12 col-md-2 col-xxl-1">
                 <button class="btn btn-danger w-100 {% if not user.is_authenticated %}disabled{% endif %}"
                         data-bs-toggle="modal" data-bs-target="#exampleModal-{{post.pk}}"
                         style="min-width: 68px;">Delete
