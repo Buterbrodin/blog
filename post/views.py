@@ -1,8 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .models import Post, Comment
-from .forms import PostForm, CustomLoginForm, CustomRegisterForm, CustomPasswordChangeForm, CommentForm
-from django.contrib.auth.views import LoginView, LogoutView, PasswordChangeView
+from .forms import PostForm, CommentForm
 from django.core.paginator import Paginator
 from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
@@ -220,7 +219,6 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         comment = self.get_object()
         return self.request.user == comment.author or self.request.user.is_superuser
 
-
 # def comment_add(request, slug):
 #     form = CommentForm()
 #     if request.method == 'POST':
@@ -233,46 +231,3 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 #             messages.success(request, 'The comment was successfully added!')
 #             return redirect('about', slug=slug)
 #     return render(request, 'post/comment_create.html', {'form': form})
-
-
-class CustomLoginView(LoginView):
-    '''Custom login view'''
-    authentication_form = CustomLoginForm
-    template_name = 'registration/login.html'
-    success_url = reverse_lazy('home')
-
-    def form_valid(self, form):
-        messages.success(self.request, 'You are now logged in!')
-        return super().form_valid(form)
-
-
-class CustomRegisterView(CreateView):
-    '''Custom register view'''
-    form_class = CustomRegisterForm
-    template_name = "registration/register.html"
-    success_url = reverse_lazy('home')
-
-    def form_valid(self, form):
-        messages.success(self.request, 'You have successfully registered a new account!')
-        user = form.save()
-        login(self.request, user)
-        return redirect('home')
-
-
-class CustomLogoutView(LogoutView):
-    '''Custom logout view'''
-
-    def dispatch(self, request, *args, **kwargs):
-        messages.success(request, "You have been logged out!")
-        return super().dispatch(request, *args, **kwargs)
-
-
-class CustomPasswordChangeView(PasswordChangeView):
-    '''Custom password change view'''
-    form_class = CustomPasswordChangeForm
-    template_name = 'registration/password_change.html'
-    success_url = reverse_lazy('home')
-
-    def form_valid(self, form):
-        messages.success(self.request, 'You have successfully changed the password!')
-        return super().form_valid(form)
