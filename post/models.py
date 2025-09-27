@@ -10,8 +10,9 @@ class Post(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='posts')
+    views = models.IntegerField(default=0)
     tags = TaggableManager()
 
     class Meta:
