@@ -1,20 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .models import Post, Comment
-from .forms import PostForm, CommentForm
+from .forms import PostForm, CommentForm, PostShareForm
 from django.core.paginator import Paginator
 from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
-from django.views.generic import DeleteView, DetailView, ListView
+from django.views.generic import DeleteView, DetailView, ListView, TemplateView
 from django.urls import reverse
 from django.db.models import Q, Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import login
-
-status = {'info': 'primary', 'success': 'success', 'error': 'danger'}
-icons = {'info': 'bi-info-circle',
-         'success': 'bi-check-circle',
-         'error': 'bi-exclamation-triangle'}
+from django.core.cache import cache
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class HomeView(ListView):
@@ -25,7 +23,10 @@ class HomeView(ListView):
     paginate_by = 5
 
     def get_queryset(self):
-        qs = Post.objects.all()
+        qs = cache.get('posts')
+        if not qs:
+            qs = Post.objects.select_related('author').prefetch_related('tags').order_by('-created_at')
+            cache.set('posts', qs, 60)
         if self.request.GET.get('user_posts') == 'true':
             if self.request.user.is_authenticated:
                 qs = qs.filter(author=self.request.user)
@@ -43,10 +44,14 @@ class HomeView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        most_viewed_posts = Post.objects.order_by('-views')[:5]
-        most_commented_posts = Post.objects.annotate(num_comments=Count('comments')).order_by('-num_comments')[:5]
-        context['status'] = status
-        context['icons'] = icons
+        most_viewed_posts = cache.get('most_viewed_posts')
+        if not most_viewed_posts:
+            most_viewed_posts = Post.objects.order_by('-views')[:5]
+            cache.set('most_viewed_posts', most_viewed_posts, 60)
+        most_commented_posts = cache.get('most_commented_posts')
+        if not most_commented_posts:
+            most_commented_posts = Post.objects.annotate(num_comments=Count('comments')).order_by('-num_comments')[:5]
+            cache.set('most_commented_posts', most_commented_posts, 60)
         context['most_viewed_posts'] = most_viewed_posts
         context['most_commented_posts'] = most_commented_posts
         return context
@@ -65,7 +70,7 @@ class HomeView(ListView):
 #     paginator = Paginator(posts, 5)
 #     page_number = request.GET.get('page')
 #     posts = paginator.get_page(page_number)
-#     return render(request, 'post/home.html', {'posts': posts, 'status': status, 'icons': icons})
+#     return render(request, 'post/home.html', {'posts': posts})
 
 
 class PostDetailView(LoginRequiredMixin, DetailView):
@@ -76,10 +81,13 @@ class PostDetailView(LoginRequiredMixin, DetailView):
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
 
+    def get_queryset(self):
+        return Post.objects.select_related('author').prefetch_related('tags')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['status'] = status
-        context['icons'] = icons
+        post = self.object
+        context['comments'] = post.comments.select_related("author").order_by("-created_at")
         return context
 
     def get_object(self, queryset=None):
@@ -103,6 +111,7 @@ class PostEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, 'The post was successfully edited!')
+        cache.delete('posts')
         return super().form_valid(form)
 
     def test_func(self):
@@ -150,6 +159,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.author = self.request.user
+        cache.delete('posts')
         messages.success(self.request, 'The post was successfully created!')
         return super().form_valid(form)
 
@@ -175,11 +185,35 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def post(self, request, *args, **kwargs):
         messages.success(request, "The post was successfully deleted!")
+        cache.delete('posts')
         return super().post(request, *args, **kwargs)
 
     def test_func(self):
         post = self.get_object()
         return self.request.user == post.author or self.request.user.is_superuser
+
+
+def post_send(request, slug):
+    form = PostShareForm()
+    if request.method == 'POST':
+        form = PostShareForm(request.POST)
+        if form.is_valid():
+            post = get_object_or_404(Post, slug=slug)
+            cd = form.cleaned_data
+            post_url = post.get_absolute_url()
+            full_url = request.build_absolute_uri(post.get_absolute_url())
+            subject = f"{request.user.username} shared this post: {post.title}"
+            message = f"{cd['description']} \n\n\n Check out this post at: {full_url}"
+            email_to = cd['email']
+            send_mail(
+                subject,
+                message,
+                settings.EMAIL_HOST_USER,
+                [email_to],
+            )
+            messages.success(request, 'The post was successfully shared!')
+            return redirect(post_url)
+    return render(request, 'post/share.html', {'form': form})
 
 
 # def delete(request, slug):

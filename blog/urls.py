@@ -18,9 +18,45 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from django.shortcuts import render
+from django.conf.urls import handler400, handler403, handler404, handler500
+from post.sitemaps import PostSitemap
+from django.contrib.sitemaps.views import sitemap
+
+sitemaps = {
+    'posts': PostSitemap,
+}
+
+
+def error_view(request, exception=None, code=500, message="Server error"):
+    return render(request, 'errors/error_page.html', {'code': code, 'message': message}, status=code)
+
+
+def error_400(request, exception):
+    return error_view(request, exception, 400, "Bad Request")
+
+
+def error_403(request, exception):
+    return error_view(request, exception, 403, "Forbidden")
+
+
+def error_404(request, exception):
+    return error_view(request, exception, 404, "Page not found")
+
+
+def error_500(request):
+    return error_view(request, None, 500, "Server error")
+
 
 urlpatterns = [
                   path('admin/', admin.site.urls),
                   path('', include('post.urls')),
-                  path('accounts/', include('accounts.urls'))
+                  path('accounts/', include('accounts.urls')),
+                  path('sitemap.xml', sitemap, {'sitemaps': sitemaps}),
+                  path('__debug__/', include('debug_toolbar.urls'))
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler400 = error_400
+handler403 = error_403
+handler404 = error_404
+handler500 = error_500

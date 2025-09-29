@@ -1,5 +1,5 @@
 {% extends 'post/base.html' %}
-
+{% load cache %}
 
 {% block title %}
 Home
@@ -38,7 +38,9 @@ Home
         </div>
         <div class="col-lg-4">
             <div class="d-flex flex-column align-items-lg-end align-items-center mt-3">
+                {% cache 60 "most_viewed_posts_block" %}
                 {% include 'post/side_info.html' %}
+                {% endcache %}
             </div>
         </div>
         {% if page_obj.paginator.num_pages > 1 %}

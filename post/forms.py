@@ -49,3 +49,15 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['content']
+
+
+class PostShareForm(forms.Form):
+    email = forms.EmailField()
+    description = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                'rows': 3,
+                'class': 'form-control mt-1 mb-2'
+            }
+        )
+    )
