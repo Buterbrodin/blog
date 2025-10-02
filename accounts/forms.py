@@ -79,7 +79,8 @@ class CustomRegisterForm(UserCreationForm):
             "placeholder": "Confirm Password"
         }),
     )
-    recaptcha = ReCaptchaField(label="")
+
+    # recaptcha = ReCaptchaField(label="")
 
     class Meta:
         model = User
@@ -135,7 +136,7 @@ class ProfileForm(forms.ModelForm):
     avatar = forms.ImageField(
         widget=forms.FileInput(
             attrs={
-                'class': 'form-control mt-1'
+                'class': 'form-control mt-1',
             }
         ))
     bio = forms.CharField(
@@ -156,11 +157,10 @@ class CustomPasswordResetForm(PasswordResetForm):
     email = forms.EmailField(
         widget=forms.TextInput(
             attrs={
-                'class': 'form-control mt-1',
+                'class': 'form-control mt-1'
             }
-        )
-    )
-    recaptcha = ReCaptchaField(label="")
+        ))
+    # recaptcha = ReCaptchaField(label="")
 
 
 class CustomPasswordResetConfirmForm(SetPasswordForm):

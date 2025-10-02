@@ -52,7 +52,13 @@ class CommentForm(forms.ModelForm):
 
 
 class PostShareForm(forms.Form):
-    email = forms.EmailField()
+    email = forms.EmailField(
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control mt-1'
+            }
+        )
+    )
     description = forms.CharField(
         widget=forms.Textarea(
             attrs={

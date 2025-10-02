@@ -15,13 +15,16 @@ from django.contrib.auth.models import User
 from accounts.tokens import account_activation_token
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 class CustomLoginView(UserPassesTestMixin, LoginView):
     '''Custom login view'''
     authentication_form = CustomLoginForm
     template_name = 'registration/login.html'
-    success_url = reverse_lazy('home')
+
+    def get_success_url(self):
+        return reverse_lazy('home')
 
     def form_valid(self, form):
         messages.success(self.request, 'You are now logged in!')
@@ -68,15 +71,22 @@ class CustomRegisterView(UserPassesTestMixin, CreateView):
         return redirect('home')
 
 
-class CustomLogoutView(LogoutView):
+class CustomLogoutView(UserPassesTestMixin, LogoutView):
     '''Custom logout view'''
 
-    def dispatch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         messages.success(request, "You have been logged out!")
-        return super().dispatch(request, *args, **kwargs)
+        return super().post(request, *args, **kwargs)
+
+    def test_func(self):
+        return self.request.user.is_authenticated
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'You are not logged in!')
+        return redirect('login')
 
 
-class CustomPasswordChangeView(PasswordChangeView):
+class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     '''Custom password change view'''
     form_class = CustomPasswordChangeForm
     template_name = 'registration/password_change.html'
@@ -87,7 +97,7 @@ class CustomPasswordChangeView(PasswordChangeView):
         return super().form_valid(form)
 
 
-class CustomPasswordRestView(PasswordResetView):
+class CustomPasswordResetView(PasswordResetView):
     template_name = 'registration/password_reset.html'
     form_class = CustomPasswordResetForm
     email_template_name = 'registration/password_reset_email.txt'

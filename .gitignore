@@ -1,0 +1,12 @@
+.env
+db.sqlite3
+blog/settings.py
+
+.venv/
+
+.idea/
+
+.qodo
+
+__pycache__/
+*.py[cod]

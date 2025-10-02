@@ -6,7 +6,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
     path('post/<str:slug>', views.PostDetailView.as_view(), name='about'),
-    path('post_share/<str:slug>/', views.post_send, name='post_send'),
+    path('post_share/<str:slug>/', views.PostShareView.as_view(), name='post_send'),
     path('post/create/', views.PostCreateView.as_view(), name='create'),
     path('post/<str:slug>/edit/', views.PostEditView.as_view(), name='edit'),
     path('post/<str:slug>/delete/', views.PostDeleteView.as_view(), name='delete'),

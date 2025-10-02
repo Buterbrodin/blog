@@ -5,14 +5,14 @@ from .forms import PostForm, CommentForm, PostShareForm
 from django.core.paginator import Paginator
 from django.views.generic.edit import CreateView, UpdateView
 from django.urls import reverse_lazy
-from django.views.generic import DeleteView, DetailView, ListView, TemplateView
+from django.views.generic import DeleteView, DetailView, ListView, FormView
 from django.urls import reverse
 from django.db.models import Q, Count
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import login
 from django.core.cache import cache
-from django.core.mail import send_mail
 from django.conf import settings
+from post.tasks import post_share
 
 
 class HomeView(ListView):
@@ -107,7 +107,9 @@ class PostEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'post/edit.html'
-    success_url = reverse_lazy('home')
+
+    def get_success_url(self):
+        return reverse('about', args=[self.kwargs['slug']])
 
     def form_valid(self, form):
         messages.success(self.request, 'The post was successfully edited!')
@@ -117,6 +119,12 @@ class PostEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def test_func(self):
         post = self.get_object()
         return self.request.user == post.author or self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, 'You do not have permission to edit this post.')
+        return redirect('home')
 
 
 class CommentEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
@@ -192,28 +200,30 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         post = self.get_object()
         return self.request.user == post.author or self.request.user.is_superuser
 
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, 'You do not have permission to delete this post.')
+        return redirect('about', slug=self.kwargs['slug'])
 
-def post_send(request, slug):
-    form = PostShareForm()
-    if request.method == 'POST':
-        form = PostShareForm(request.POST)
-        if form.is_valid():
-            post = get_object_or_404(Post, slug=slug)
-            cd = form.cleaned_data
-            post_url = post.get_absolute_url()
-            full_url = request.build_absolute_uri(post.get_absolute_url())
-            subject = f"{request.user.username} shared this post: {post.title}"
-            message = f"{cd['description']} \n\n\n Check out this post at: {full_url}"
-            email_to = cd['email']
-            send_mail(
-                subject,
-                message,
-                settings.EMAIL_HOST_USER,
-                [email_to],
-            )
-            messages.success(request, 'The post was successfully shared!')
-            return redirect(post_url)
-    return render(request, 'post/share.html', {'form': form})
+
+class PostShareView(LoginRequiredMixin, FormView):
+    template_name = 'post/share.html'
+    form_class = PostShareForm
+
+    def form_valid(self, form):
+        slug = self.kwargs['slug']
+        post = get_object_or_404(Post, slug=slug)
+        full_url = self.request.build_absolute_uri(post.get_absolute_url())
+        username = self.request.user.username
+        description = form.cleaned_data['description']
+        email_to = form.cleaned_data['email']
+        post_share.delay(slug, full_url, username, description, email_to)
+        messages.success(self.request, 'The post was successfully shared!')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('about', args=[self.kwargs['slug']])
 
 
 # def delete(request, slug):
@@ -247,11 +257,18 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return super().post(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse('about', args=(self.object.post.slug,))
+        return reverse('about', args=[self.object.post.slug])
 
     def test_func(self):
         comment = self.get_object()
         return self.request.user == comment.author or self.request.user.is_superuser
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        messages.error(self.request, 'You do not have permission to delete this comment.')
+        post = self.get_object().post
+        return redirect('about', slug=post.slug)
 
 # def comment_add(request, slug):
 #     form = CommentForm()
