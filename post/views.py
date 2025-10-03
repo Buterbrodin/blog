@@ -131,7 +131,7 @@ class CommentEditView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     '''Edit comment view'''
     model = Comment
     form_class = CommentForm
-    template_name = 'post/comment_create.html'
+    template_name = 'post/comment_edit.html'
 
     def get_success_url(self):
         return self.get_object().post.get_absolute_url()

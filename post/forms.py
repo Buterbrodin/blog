@@ -2,7 +2,7 @@ from tabnanny import verbose
 
 from django import forms
 from post.models import Post, Comment
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.validators import MinLengthValidator, RegexValidator, EmailValidator
 from taggit.forms import TagField, TagWidget
 
 
@@ -57,7 +57,7 @@ class PostShareForm(forms.Form):
             attrs={
                 'class': 'form-control mt-1'
             }
-        )
+        ),
     )
     description = forms.CharField(
         widget=forms.Textarea(
@@ -65,5 +65,6 @@ class PostShareForm(forms.Form):
                 'rows': 3,
                 'class': 'form-control mt-1 mb-2'
             }
-        )
+        ),
+        validators=[MinLengthValidator(10, 'Description must be at least 10 characters')]
     )

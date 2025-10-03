@@ -1,13 +1,73 @@
 from django.template.defaulttags import comment
-from django.test import TestCase
+from django.test import TestCase, SimpleTestCase
 from post.models import Post, Comment
+from post.forms import PostForm, CommentForm, PostShareForm
 from django.contrib.auth.models import User
 from django.urls import reverse, resolve
 import post.views as views
 from post.models import Post, Comment
 
 
-class PostURLsTests(TestCase):
+class PostFormTests(SimpleTestCase):
+
+    def test_post_form_valid(self):
+        form_data = {'title': 'valid-title', 'content': 'valid-content', 'tags': 'valid,tags'}
+        form = PostForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_post_form_invalid(self):
+        form_data = {'title': 't', 'content': 't', 'tags': 't'}
+        form = PostForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'title', 'Title must be at least 3 characters')
+        self.assertFormError(form, 'content', 'Content must be at least 10 characters')
+        self.assertFormError(form, 'tags', 'Tags must be at least 3 characters')
+
+    def test_post_form_empty(self):
+        form_data = {'title': '', 'content': '', 'tags': ''}
+        form = PostForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'title', 'This field is required.')
+        self.assertFormError(form, 'content', 'This field is required.')
+
+    def test_comment_form_valid(self):
+        form_data = {'content': 'valid-comment'}
+        form = CommentForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_comment_form_invalid(self):
+        form_data = {'content': 'invalid'}
+        form = CommentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'content', 'Comment must be at least 10 characters')
+
+    def test_comment_form_empty(self):
+        form_data = {'content': ''}
+        form = CommentForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'content', 'This field is required.')
+
+    def test_post_share_form_valid(self):
+        form_data = {'email': 'valid@email.com', 'description': 'valid-description'}
+        form = PostShareForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_post_share_form_invalid(self):
+        form_data = {'email': 'invalid', 'description': 'invalid'}
+        form = PostShareForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'email', 'Enter a valid email address.')
+        self.assertFormError(form, 'description', 'Description must be at least 10 characters')
+
+    def test_post_share_empty(self):
+        form_data = {'email': '', 'description': ''}
+        form = PostShareForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertFormError(form, 'email', 'This field is required.')
+        self.assertFormError(form, 'description', 'This field is required.')
+
+
+class PostURLsAndTemplateTests(TestCase):
 
     def setUp(self):
         self.user = User(username='test-user', is_active=True)
@@ -29,6 +89,9 @@ class PostURLsTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'post/home.html')
+        self.assertTemplateUsed(response, 'post/post_card.html')
+        self.assertTemplateUsed(response, 'post/side_info.html')
+        self.assertContains(response, self.post.title)
 
     def test_about_url_view(self):
         url = reverse('about', args=['test-arg'])
@@ -40,6 +103,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertRedirects(response, f'{reverse('login')}?next={url}')
         self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_about_url_response_authorized(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -66,6 +130,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f'{reverse('login')}?next={url}')
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_post_create_url_authorized_valid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -75,6 +140,8 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('home'))
         self.assertEqual(Post.objects.count(), 2)  # +1 post from setUp
+        self.assertTemplateUsed(response, 'post/home.html')
+        self.assertContains(response, 'The post was successfully created!')
 
     def test_post_create_url_authorized_invalid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -84,6 +151,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context['form'], 'title', 'This field is required.')
         self.assertEqual(Post.objects.count(), 1)  # 1 post from setUp
+        self.assertTemplateUsed(response, 'post/create.html')
 
     def test_post_share_url_view(self):
         url = reverse('post_send', args=['test-arg'])
@@ -95,6 +163,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f'{reverse('login')}?next={url}')
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_post_share_url_authorized_valid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -104,6 +173,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'The post was successfully shared!')
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_post_share_url_authorized_invalid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -112,6 +182,7 @@ class PostURLsTests(TestCase):
         response = self.client.post(url, context, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context['form'], 'email', 'This field is required.')
+        self.assertTemplateUsed(response, 'post/share.html')
 
     def test_post_edit_url_view(self):
         url = reverse('edit', args=['test-arg'])
@@ -123,6 +194,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f'{reverse('login')}?next={url}')
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_post_edit_url_authorized_permitted_valid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -134,6 +206,7 @@ class PostURLsTests(TestCase):
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'The post was successfully edited!')
         self.assertEqual(self.post.title, 'edited-test-post')
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_post_edit_url_authorized_permitted_invalid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -144,6 +217,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context['form'], 'title', 'This field is required.')
         self.assertNotEqual(self.post.title, '')
+        self.assertTemplateUsed(response, 'post/edit.html')
 
     def test_post_edit_url_authorized_unpermitted_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -154,6 +228,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('home'))
         self.assertContains(response, 'You do not have permission to edit this post.')
+        self.assertTemplateUsed(response, 'post/home.html')
 
     def test_post_delete_url_view(self):
         url = reverse('delete', args=['test-arg'])
@@ -165,6 +240,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_post_delete_url_authorized_permitted_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -173,6 +249,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('home'))
         self.assertContains(response, 'The post was successfully deleted!')
+        self.assertTemplateUsed(response, 'post/home.html')
 
     def test_post_delete_url_authorized_unpermitted_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -183,6 +260,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('about', args=[post2.slug]))
         self.assertContains(response, 'You do not have permission to delete this post.')
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_comment_add_url_view(self):
         url = reverse('comment_add', args=['test-arg'])
@@ -194,6 +272,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_comment_add_url_authorized_valid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -204,6 +283,7 @@ class PostURLsTests(TestCase):
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'The comment was successfully added!')
         self.assertEqual(self.post.comments.count(), 2)  # +1 comment from setUp
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_comment_add_url_authorized_invalid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -213,6 +293,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context['form'], 'content', 'Comment must be at least 10 characters')
         self.assertEqual(self.post.comments.count(), 1)  # 1 comment from setUp
+        self.assertTemplateUsed(response, 'post/comment_create.html')
 
     def test_comment_delete_url_view(self):
         url = reverse('comment_delete', args=['1'])
@@ -224,6 +305,7 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_comment_delete_url_authorized_unpermitted_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -235,6 +317,7 @@ class PostURLsTests(TestCase):
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'You do not have permission to delete this comment.')
         self.assertEqual(self.post.comments.count(), 2)  # +1 comment from setUp
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_comment_delete_url_authorized_permitted_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -243,6 +326,8 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'The comment was successfully deleted!')
+        self.assertEqual(self.post.comments.count(), 0)  # -1 comment from setUp
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_comment_edit_url_view(self):
         url = reverse('comment_edit', args=['1'])
@@ -254,15 +339,19 @@ class PostURLsTests(TestCase):
         response = self.client.get(url, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, f"{reverse('login')}?next={url}")
+        self.assertTemplateUsed(response, 'registration/login.html')
 
     def test_comment_edit_url_authorized_valid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
         url = reverse('comment_edit', args=[self.comment.pk])
         context = {'content': 'edited-comment-for-post'}
         response = self.client.post(url, context, follow=True)
+        self.comment.refresh_from_db()
         self.assertEqual(response.status_code, 200)
         self.assertRedirects(response, reverse('about', args=[self.post.slug]))
         self.assertContains(response, 'The comment was successfully edited!')
+        self.assertEqual(self.comment.content, 'edited-comment-for-post')
+        self.assertTemplateUsed(response, 'post/about.html')
 
     def test_comment_edit_url_authorized_invalid_response(self):
         self.client.login(username=self.user.username, password='Assembler7002')
@@ -272,6 +361,7 @@ class PostURLsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFormError(response.context['form'], 'content', 'Comment must be at least 10 characters')
         self.assertEqual(self.comment.content, 'test-content')
+        self.assertTemplateUsed(response, 'post/comment_edit.html')
 
 
 class PostModelTests(TestCase):

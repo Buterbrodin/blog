@@ -31,7 +31,8 @@ class CustomLoginForm(AuthenticationForm):
             }
         )
     )
-    recaptcha = ReCaptchaField(label="")
+
+    # recaptcha = ReCaptchaField(label="")
 
     class Meta:
         model = User
@@ -116,7 +117,8 @@ class UserForm(forms.ModelForm):
             attrs={
                 'class': 'form-control mt-1'
             }
-        )
+        ),
+        validators=[MinLengthValidator(4, "Username must be at least 4 characters"), ]
     )
     email = forms.EmailField(
         required=True,
