@@ -2,7 +2,7 @@ from django.test import TestCase, SimpleTestCase
 from post.forms import PostForm, CommentForm, PostShareForm
 from django.contrib.auth.models import User
 from django.urls import reverse, resolve
-import post as views
+import post.views as views
 from post.models import Post, Comment
 
 

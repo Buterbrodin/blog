@@ -8,3 +8,10 @@
 
 __pycache__/
 *.py[cod]
+
+blog/__pycache__/
+media/post_images/
+
+static/icons
+
+post

@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from accounts.models import Profile
 from django.urls import reverse, resolve
-from app import accounts as views
+import accounts.views as views
 import accounts as forms
 from accounts.tokens import account_activation_token
 from django.utils.encoding import force_bytes
