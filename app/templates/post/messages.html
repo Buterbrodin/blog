@@ -1,0 +1,10 @@
+{% load my_filters %}
+<div class="container mt-3">
+    <div class="alert alert-{{status|get_item:message.tags}} alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi {{icons|get_item:message.tags}} me-1 alert-icon"></i>
+            {{ message }}
+        </div>
+        <button type="button" class="btn-close close-alert" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+name: blog-pet-project
+
+services:
+  web:
+    build: ./app
+    command: gunicorn blog.wsgi:application --bind 0.0.0.0:8000
+    env_file:
+      - prod.env
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - static_collected:/usr/src/app/static_collected
+      - media:/usr/src/app/media
+    container_name: web
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - prod.env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_USER_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    container_name: postgres
+
+  memcached:
+    image: memcached:1.6.21
+    container_name: memcached
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: ./app
+    command: celery -A blog_celery worker --loglevel=info
+    volumes:
+      - .:/usr/src/app/web
+    env_file:
+      - prod.env
+    depends_on:
+      - redis
+      - db
+
+  nginx:
+    build: ./app/nginx
+    ports:
+      - 80:80
+    depends_on:
+      - web
+    volumes:
+      - static_collected:/usr/share/nginx/html/static
+      - media:/usr/share/nginx/html/media
+
+volumes:
+  postgres_data:
+  static_collected:
+  media:

@@ -1,0 +1,49 @@
+{% extends 'post/base.html' %}
+{% block title %}
+Login
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+{% for message in messages %}
+{% include 'post/messages.html' with message=message %}
+{% endfor %}
+{% endif %}
+{% if form.non_field_errors %}
+{% for error in form.non_field_errors %}
+<div class="container mt-3">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            {{ error }}
+        </div>
+        <button type="button" class="btn-close close-alert" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+<div class="container mt-4">
+    <h2>Login</h2>
+    <a href="{% url 'oauth:begin' 'github' %}"><i class="bi bi-github text-black oauth-icon"></i></a>
+    <a href="{% url 'oauth:begin' 'google-oauth2' %}" class="ms-3 oauth-icon"> <i class="bi bi-google"></i></a>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="row">
+            <div class="col-md-6 col-lg-4 gy-2">
+                {{field.label_tag}}
+                {{field}}
+                {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ field.errors|striptags }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary my-3">Login</button>
+        <button type="reset" class="btn btn-danger">Reset</button>
+    </form>
+    <p>Forgot your password? Click <a href="{% url 'password_reset' %}">here</a>.</p>
+</div>
+
+{% endblock %}

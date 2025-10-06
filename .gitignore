@@ -1,6 +1,4 @@
-.env
-db.sqlite3
-blog/settings.py
+*.sqlite3
 
 .venv/
 

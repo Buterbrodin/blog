@@ -1,0 +1,48 @@
+name: blog-pet-project-debug
+
+services:
+  web:
+    build: ./app
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - 127.0.0.1:8000:8000
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - memcached
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_USER_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+
+  memcached:
+    image: memcached:1.6.21
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: ./app
+    command: celery -A blog_celery worker --loglevel=info
+    volumes:
+      - .:/usr/src/app/web
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - db
+
+
+volumes:
+  postgres-data:

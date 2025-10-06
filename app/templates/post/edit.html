@@ -1,0 +1,29 @@
+{% extends 'post/base.html' %}
+
+{% block title %}
+edit {{post}}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Edit the post!</h2>
+    <div class="row">
+        <div class="col-5">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                {{field.label_tag}}
+                {{field}}
+                {% if field.errors %}
+                <div class="invalid-feedback d-block">
+                    {{ field.errors|striptags }}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Edit</button>
+                <button type="reset" class="btn btn-danger">Reset</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
