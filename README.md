@@ -40,7 +40,7 @@
 ## 🚀 Установка и запуск проекта
 
 1)Клонирование репозитория  
-```bash git clone https://github.com/Buterbrodin/blog.git```  
+```git clone https://github.com/Buterbrodin/blog.git```  
 
 2)Настройка файла окружения  
 
@@ -48,11 +48,11 @@
 
 3)Создание и запуск Docker контейнера  
 
-```bash docker compose -f docker-compose.yml --env-file .env up -d --build```  
+```docker compose -f docker-compose.yml --env-file .env up -d --build```  
 
 4)Применение миграций  
 
-```bash docker compose -f docker-compose.yml --env-file .env exec web python manage.py migrate```  
+```docker compose -f docker-compose.yml --env-file .env exec web python manage.py migrate```  
 
 Далее проект будет доступен по адресу  
 
@@ -62,7 +62,7 @@
 
 Для выполнения тестов необходимо выполнить команду
 
-```bash docker compose -f docker-compose.yml --env-file .env exec web python manage.py test```
+```docker compose -f docker-compose.yml --env-file .env exec web python manage.py test```
 
 ## 📁 Структура проекта
 ```text
@@ -127,7 +127,7 @@ blog/
 - **Пример уведомления**
 
 ![Пример уведомления](https://github.com/user-attachments/assets/fc778dfb-26f2-470e-9a1b-d6725748b87f)
-
+*Рисунок 7. Пример уведомления*
   
 
 
