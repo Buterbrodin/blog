@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from accounts.models import Profile
 from django.urls import reverse, resolve
 import accounts.views as views
-import accounts as forms
+import accounts.forms as forms
 from accounts.tokens import account_activation_token
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
